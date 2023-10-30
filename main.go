@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/gofiber/fiber/v2"
+	cli "github.com/jawher/mow.cli"
 )
 
 type ShowLine struct {
@@ -15,11 +16,27 @@ type ShowLine struct {
 }
 
 func main() {
-	quiet := len(os.Args) == 2 && os.Args[1] == "-q"
-	if len(os.Args) != 1 && !quiet {
-		fmt.Fprintln(os.Stderr, "Usage: post-debug-listener [-q]\n    -q -- don't use colors\n")
-		os.Exit(1)
+	app := cli.App("post-debug-listener", "Listen on a port for debug POSTs, and print them")
+
+	app.Spec = "[-q] [-p=<port>]"
+
+	var (
+		quiet = app.BoolOpt("q quiet", false, "Run without colors")
+		port  = app.IntOpt("p port", 3030, "Port to listen on")
+	)
+
+	app.Action = func() {
+		runServer(*quiet, *port)
 	}
+
+	// Invoke the app passing in os.Args
+	err := app.Run(os.Args)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func runServer(quiet bool, port int) {
 	fmt.Printf("Using colors: %v\n", !quiet)
 
 	//inverse := lipgloss.NewStyle().
@@ -68,5 +85,8 @@ func main() {
 		return c.SendString("good")
 	})
 
-	app.Listen(":3030")
+	err := app.Listen(fmt.Sprintf(`:%d`, port))
+	if err != nil {
+		panic(err)
+	}
 }

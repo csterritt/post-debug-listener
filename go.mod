@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/gofiber/fiber/v2 v2.50.0
+	github.com/jawher/mow.cli v1.2.0
 )
 
 require (
