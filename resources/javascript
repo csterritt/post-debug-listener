@@ -1,0 +1,28 @@
+// Use via calls like:
+// import dumpToDebug from 'path/to/this/file.js'
+// // ...
+// try {
+//   // ...
+// } catch (err) {
+//   dumpToDebug('WebServer', 'ERROR', `Unable to connect to database: ${err}`)
+// }
+
+const dumpToDebug = async (sender, type, strings) => {
+  if (!Array.isArray(strings)) {
+    strings = [strings]
+  }
+
+  return fetch('http://localhost:3030/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      type,
+      line: strings.join(' '),
+    }),
+  })
+}
+
+export default dumpToDebug

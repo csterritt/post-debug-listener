@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 
@@ -15,18 +16,44 @@ type ShowLine struct {
 	Type   string `json:"type"`
 }
 
+var (
+	//go:embed resources
+	resourceReader embed.FS
+	pages          = map[string]string{
+		"javascript": "resources/javascript",
+	}
+)
+
+func provideExample(language string) {
+	if page, found := pages[language]; found {
+		content, err := resourceReader.ReadFile(page)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "Got an error reading %s file: %v\n", language, err)
+		} else {
+			fmt.Println(string(content))
+		}
+	} else {
+		fmt.Println("There is no example for the", language, "language. Please submit one!")
+	}
+}
+
 func main() {
 	app := cli.App("post-debug-listener", "Listen on a port for debug POSTs, and print them")
 
-	app.Spec = "[-q] [-p=<port>]"
+	app.Spec = "[-q] [-p=<port>] [-e=<language>]"
 
 	var (
-		quiet = app.BoolOpt("q quiet", false, "Run without colors")
-		port  = app.IntOpt("p port", 3030, "Port to listen on")
+		quiet    = app.BoolOpt("q quiet", false, "Run without colors")
+		port     = app.IntOpt("p port", 3030, "Port to listen on")
+		language = app.StringOpt("e example", "", "Provide a client example in the given language (javascript)")
 	)
 
 	app.Action = func() {
-		runServer(*quiet, *port)
+		if *language != "" {
+			provideExample(*language)
+		} else {
+			runServer(*quiet, *port)
+		}
 	}
 
 	// Invoke the app passing in os.Args
