@@ -1,0 +1,4 @@
+# Use the command-line tool 'curl' to send a debug line from a shell script:
+curl -X POST -H "Content-type: application/json" \
+  -d '{"sender":"Deploy script", "type":"INFO", "line":"Deploy succeeded."}' \
+  http://localhost:3030/

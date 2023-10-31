@@ -20,6 +20,8 @@ var (
 	//go:embed resources
 	resourceReader embed.FS
 	pages          = map[string]string{
+		"curl":       "resources/curl",
+		"go":         "resources/go",
 		"javascript": "resources/javascript",
 	}
 )
@@ -45,7 +47,7 @@ func main() {
 	var (
 		quiet    = app.BoolOpt("q quiet", false, "Run without colors")
 		port     = app.IntOpt("p port", 3030, "Port to listen on")
-		language = app.StringOpt("e example", "", "Provide a client example in the given language (javascript)")
+		language = app.StringOpt("e example", "", "Provide a client example in the given language\n\t\t(curl, go, javascript)")
 	)
 
 	app.Action = func() {

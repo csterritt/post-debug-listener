@@ -1,0 +1,34 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+)
+
+type DebugArgs struct {
+	Sender string `json:"sender"`
+	Type   string `json:"type"`
+	Line   string `json:"line"`
+}
+
+func main() {
+	args := DebugArgs{
+		Sender: "Database Server",
+		Type:   "WARN",
+		Line:   "Database connection timed out",
+	}
+	url := "http://localhost:3030"
+	jsonData, err := json.Marshal(args)
+	if err != nil {
+		panic(err)
+	}
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+	client := &http.Client{}
+	_, err = client.Do(request)
+	if err != nil {
+		panic(err)
+	}
+}
