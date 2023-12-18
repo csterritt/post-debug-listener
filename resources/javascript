@@ -6,8 +6,16 @@
 // } catch (err) {
 //   await dumpToDebug('WebServer', 'ERROR', `Unable to connect to database: ${err}`)
 // }
+import dns from 'node:dns'
+
+let dnsSetupDone = false
 
 const dumpToDebug = async (sender, type, strings) => {
+  if (!dnsSetupDone) {
+    dnsSetupDone = true
+    dns.setDefaultResultOrder('ipv4first')
+  }
+
   if (!Array.isArray(strings)) {
     strings = [strings]
   }
