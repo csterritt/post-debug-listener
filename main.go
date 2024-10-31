@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"os"
 
@@ -39,39 +40,28 @@ func provideExample(language string) {
 	}
 }
 
-func main() {
-	app := cli.App("post-debug-listener", "Listen on a port for debug POSTs, and print them")
-
-	app.Spec = "[-q] [-p=<port>] [-e=<language>]"
-
-	var (
-		quiet    = app.BoolOpt("q quiet", false, "Run without colors")
-		port     = app.IntOpt("p port", 3030, "Port to listen on")
-		language = app.StringOpt("e example", "", "Provide a client example in the given language\n\t\t(curl, go, javascript)")
-	)
-
-	app.Action = func() {
-		if *language != "" {
-			provideExample(*language)
-		} else {
-			runServer(*quiet, *port)
-		}
-	}
-
-	// Invoke the app passing in os.Args
-	err := app.Run(os.Args)
+func writeLineToFile(line string, outputFile string) {
+	file, err := os.OpenFile(outputFile,
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		fmt.Println("Got error creating file: ", err)
+		return
+	}
+	defer func() {
+		err = errors.Join(err, file.Close())
+	}()
+
+	_, err = file.WriteString(line)
+	if err != nil {
+		fmt.Println("Got error writing to file: ", err)
 	}
 }
 
-func runServer(quiet bool, port int) {
+func runServer(quiet bool, port int, outputFile string) {
 	fmt.Printf("Using colors: %v\n", !quiet)
-
-	//inverse := lipgloss.NewStyle().
-	//	Bold(true).
-	//	Foreground(lipgloss.AdaptiveColor{Light: "255", Dark: "0"}).
-	//	Background(lipgloss.AdaptiveColor{Light: "245", Dark: "15"})
+	if outputFile != "" {
+		fmt.Printf("Also writing lines to %s\n", outputFile)
+	}
 
 	green := lipgloss.NewStyle().
 		Foreground(lipgloss.AdaptiveColor{Light: "15", Dark: "0"}).
@@ -91,6 +81,10 @@ func runServer(quiet bool, port int) {
 		line := new(ShowLine)
 		if err := c.BodyParser(line); err != nil {
 			return err
+		}
+
+		if outputFile != "" {
+			writeLineToFile(fmt.Sprintf("%s: %s %s\n", line.Sender, line.Type, line.Line), outputFile)
 		}
 
 		if quiet {
@@ -115,6 +109,33 @@ func runServer(quiet bool, port int) {
 	})
 
 	err := app.Listen(fmt.Sprintf(`:%d`, port))
+	if err != nil {
+		panic(err)
+	}
+}
+
+func main() {
+	app := cli.App("post-debug-listener", "Listen on a port for debug POSTs, and print them")
+
+	app.Spec = "[-q] [-p=<port>] [-o=<output_file>] [-e=<language>]"
+
+	var (
+		quiet      = app.BoolOpt("q quiet", false, "Run without colors")
+		port       = app.IntOpt("p port", 3030, "Port to listen on")
+		outputFile = app.StringOpt("o output", "", "Also write the posted lines to a file")
+		language   = app.StringOpt("e example", "", "Provide a client example in the given language\n\t\t(curl, go, javascript)")
+	)
+
+	app.Action = func() {
+		if *language != "" {
+			provideExample(*language)
+		} else {
+			runServer(*quiet, *port, *outputFile)
+		}
+	}
+
+	// Invoke the app passing in os.Args
+	err := app.Run(os.Args)
 	if err != nil {
 		panic(err)
 	}
